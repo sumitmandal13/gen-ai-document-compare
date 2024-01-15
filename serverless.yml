@@ -1,0 +1,86 @@
+service: document-compare
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.8
+
+  region: "ap-south-1"
+  deploymentBucket:
+    name: "tagic-serverless-deployment-bucket"
+  stage: ${opt:stage, 'dev'}
+  tags:
+    project: 'document-compare'
+    environment: ${opt:stage, 'dev'}
+    createdBy: 'serverless-codedeploy'
+
+  environment:
+    DEBUG: ${file(env_vars.json):DEBUG}
+    STAGE: ${file(env_vars.json):STAGE}
+    REGION: ${file(env_vars.json):REGION}
+    S3_BUCKET_NAME: ${file(env_vars.json):S3_BUCKET_NAME}
+    S3_EMBEDDINGS_PATH: ${file(env_vars.json):S3_EMBEDDINGS_PATH}
+    S3_SAVE_INPUT_BUCKET: ${file(env_vars.json):S3_SAVE_INPUT_BUCKET}
+    # WEBHOOK_URL: ${file(env_vars.json):WEBHOOK_URL}
+
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - s3:*
+      Resource: "*"
+
+    - Effect: "Allow"
+      Action:
+        - lambda:InvokeFunction
+        - lambda:InvokeAsync
+      Resource: "*"
+
+
+package:
+  patterns:
+    - '!node_modules/**'
+    - '!venv/**'
+    - '!.venv/**'
+    - '!infra/**'
+    - '!scripts/**'
+    - '!test/**'
+    - '!tests-integration'
+    - '!adityaenv/**'
+    - '!backendenv/**'
+
+
+plugins:
+  - serverless-wsgi
+  - serverless-python-requirements
+  - serverless-prune-plugin
+
+
+custom:
+ wsgi:
+   app: src/main.app
+   packRequirements: false
+ prune:
+   automatic: true
+   includeLayers: true
+   number: 5
+functions:
+  document-compare-s3-upload-handler:
+    handler: src/lambdas/pdf_monitoring_lambda.lambda_handler
+    timeout: 900
+    events:
+      - s3:
+          bucket: ${file(env_vars.json):S3_BUCKET_NAME}
+          event : s3:ObjectCreated:*
+          rules : 
+            - prefix : ${file(env_vars.json):S3_SAVE_INPUT_BUCKET}
+            # - suffix : .mp4
+          existing: true
+
+  app:
+    handler: wsgi_handler.handler
+    timeout: 900
+    events:
+      - httpApi: '*'
+
+  

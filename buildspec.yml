@@ -1,0 +1,32 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+      nodejs: 14
+    commands:
+      - echo "Installing Python dependencies"
+      
+      - echo Installing serverless
+      - npm install -g serverless@3
+      - echo Installing serverless plugins
+      - npm install
+      - npm install --save-dev serverless-prune-plugin
+      - npm install --save-dev serverless-wsgi
+      - npm install --save-dev serverless-python-requirements
+
+
+
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - touch env_vars.json
+      - IMAGE_ENV_VARS=$(echo "${ENV_VARS}" | jq 'del(.AWS_ACCESS_KEY_ID, .AWS_SECRET_ACCESS_KEY)')
+      - echo $IMAGE_ENV_VARS > env_vars.json
+      - cp env_vars.json src/env_vars.json
+      - cat env_vars.json
+      - cat src/env_vars.json
+  build:
+    commands:
+      - SLS_DEBUG=1 serverless deploy --stage ${BUILD_ENV} --verbose

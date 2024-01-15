@@ -1,0 +1,11 @@
+{
+    "DEBUG": "true",
+    "STAGE": "dev",
+    "REGION": "ap-south-1",
+    "S3_BUCKET_NAME": "tagic-cv",
+    "S3_SAVE_INPUT_BUCKET": "document-compare/",
+    "SAGEMAKER_ENDPOINT": "pdf-endpoint",
+    "SERVERLESS_DEPLOYMENT_BUCKET": "tagic-serverless-deployment-bucket",
+    "S3_EMBEDDINGS_PATH": "embeddings/",
+    "EMBEDDINBGS_STAGE": ""
+}
